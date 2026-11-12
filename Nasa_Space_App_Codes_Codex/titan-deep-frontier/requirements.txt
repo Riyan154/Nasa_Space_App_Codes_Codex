@@ -1,0 +1,1 @@
+# No Python dependencies. This game uses browser JavaScript and Node's standard library.
