@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>disable</ImplicitUsings><Nullable>disable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/Scripts/Core/Catalog.cs" Link="Catalog.cs" />
+    <Compile Include="../../Assets/Scripts/Core/EquipmentSet.cs" Link="EquipmentSet.cs" />
+    <Compile Include="../../Assets/Scripts/Core/DestinationSet.cs" Link="DestinationSet.cs" />
+    <Compile Include="../../Assets/Scripts/Core/DifficultySet.cs" Link="DifficultySet.cs" />
+    <Compile Include="../../Assets/Scripts/Core/MissionEngine.cs" Link="MissionEngine.cs" />
+    <Compile Include="../../Assets/Scripts/Core/SaveSystem.cs" Link="SaveSystem.cs" />
+    <Compile Include="../../Assets/Scripts/Core/NASAUrl.cs" Link="NASAUrl.cs" />
+    <Compile Include="../../Assets/Scripts/Flight/FlightPhysics.cs" Link="FlightPhysics.cs" />
+    <Compile Include="../../Assets/Tests/EditMode/*.cs" Link="Tests/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

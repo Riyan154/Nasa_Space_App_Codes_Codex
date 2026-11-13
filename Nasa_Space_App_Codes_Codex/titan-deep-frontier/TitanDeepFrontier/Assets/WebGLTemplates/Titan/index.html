@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TITAN: Deep Frontier</title>
+<style>body{margin:0;background:#0a121c;color:#f6e8bd;font:18px system-ui}canvas{display:block;width:100%;height:85vh}#loader{padding:1rem}details{padding:1rem}button{background:#21464c;color:white;border:1px solid #ddb66c;border-radius:8px;padding:14px;margin:6px;font:inherit}button:focus-visible{outline:4px solid #ddb66c}#accessible-controls{display:flex;flex-wrap:wrap}</style></head>
+<body><div id="loader" role="status">Preparing your mission…</div><canvas id="unity-canvas" tabindex="0" aria-label="3D mission. WASD or arrows move; hold Space to launch or fly; E collects discoveries; Escape pauses."></canvas>
+<details><summary>Accessible mission controls</summary><p>These buttons mirror the game's current controls. Use keyboard movement in the canvas for flight and exploration.</p><div id="accessible-controls"></div></details>
+<script src="Build/{{{ LOADER_FILENAME }}}"></script><script>
+createUnityInstance(document.getElementById('unity-canvas'), {
+ dataUrl:'Build/{{{ DATA_FILENAME }}}',frameworkUrl:'Build/{{{ FRAMEWORK_FILENAME }}}',codeUrl:'Build/{{{ CODE_FILENAME }}}',streamingAssetsUrl:'StreamingAssets',companyName:'Riyan',productName:'TITAN Deep Frontier',productVersion:'1.0'
+}, p=>{document.getElementById('loader').textContent='Loading mission '+Math.round(p*100)+'%';}).then(instance=>{window.titanInstance=instance;document.getElementById('loader').textContent='Mission ready.';}).catch(()=>{document.getElementById('loader').textContent='Could not load the Unity build. Check WebGL support and the server compression settings.';});
+</script></body></html>

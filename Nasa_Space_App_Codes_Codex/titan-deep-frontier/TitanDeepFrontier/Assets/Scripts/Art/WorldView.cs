@@ -1,0 +1,51 @@
+using UnityEngine;
+using UnityEngine.EventSystems;
+namespace Titan {
+    public class WorldView : MonoBehaviour {
+        public Transform world,craft,ring,chute;public Camera cameraRig;public Vector3 goal;public float orbit=25;float phase;Stage previous;GameManager game;Light sunlight;
+        public static readonly Vector3[] Sites={new Vector3(10,0,12),new Vector3(-16,0,24),new Vector3(24,0,36),new Vector3(-22,0,48),new Vector3(5,0,65)};
+        public void Initialize(GameManager owner){game=owner;var cam=new GameObject("Mission camera");cameraRig=cam.AddComponent<Camera>();cam.AddComponent<AudioListener>();cameraRig.fieldOfView=52;cameraRig.farClipPlane=800;sunlight=new GameObject("Sun").AddComponent<Light>();sunlight.type=LightType.Directional;sunlight.intensity=1.25f;sunlight.transform.rotation=Quaternion.Euler(40,-30,0);sunlight.shadows=LightShadows.Soft;RenderSettings.ambientLight=new Color(.4f,.45f,.5f);}
+        public void Rebuild() {
+            if(world){world.gameObject.SetActive(false);Destroy(world.gameObject);}world=new GameObject("Procedural world").transform;phase=0;previous=game.Screen;
+            var m=game.Mission;var d=game.Data.World(m.destination);bool space=game.Screen==Stage.Travel;
+            sunlight.shadows=d.id=="moon"?LightShadows.Hard:LightShadows.Soft;
+            RenderSettings.fog=!space&&d.id!="moon";RenderSettings.fogMode=FogMode.Exponential;RenderSettings.fogDensity=d.id=="titan"?.007f:.003f;ColorUtility.TryParseHtmlString(d.id=="titan"?"#a88860":d.id=="mars"?"#9a684e":"#0a121c",out var sky);RenderSettings.fogColor=sky;cameraRig.backgroundColor=sky;
+            var skyMaterial=UnityEngine.Resources.Load<Material>("TitanSky");if(skyMaterial){RenderSettings.skybox=skyMaterial;skyMaterial.SetColor("_Horizon",space?new Color(.04f,.08f,.15f):sky);skyMaterial.SetColor("_Zenith",new Color(.04f,.08f,.15f));cameraRig.clearFlags=CameraClearFlags.Skybox;}
+            string ground=d.id=="titan"?"#305650":d.id=="mars"?"#9a684e":"#939392";
+            if(!space){SpacecraftAssembly.Shape(world,"Surface",PrimitiveType.Cube,new Vector3(0,-.5f,30),new Vector3(240,1,240),ground);
+                if(d.id=="titan")for(int i=0;i<12;i++)SpacecraftAssembly.Shape(world,"Lake shimmer",PrimitiveType.Cube,new Vector3(Mathf.Sin(i*4)*35,.025f,5+i*6),new Vector3(4+i%4, .02f,.13f),"#467773");
+                var random=new System.Random(41);for(int i=0;i<90;i++){float x=(float)random.NextDouble()*180-90,z=(float)random.NextDouble()*180-60;if(Mathf.Abs(x)<30&&z<80&&z>-10)continue;float size=1+(float)random.NextDouble()*6;
+                    SpacecraftAssembly.Cone(world,d.id=="moon"?"Crater rim":"Rock ridge",new Vector3(x,0,z),size,size*.6f,d.id=="mars"?"#bd805b":"#777b73");}
+                if(d.id=="mars")SpacecraftAssembly.Cone(world,"Distant Olympus Mons (artistic scale)",new Vector3(-60,0,100),32,15,"#895f51");
+            }
+            for(int i=0;i<85;i++){float a=i*2.39996f;SpacecraftAssembly.Shape(world,"Star",PrimitiveType.Sphere,new Vector3(Mathf.Sin(a)*180,55+i%17*5,Mathf.Cos(a)*180),Vector3.one*(i%6==0?.6f:.25f),i%3==0?"#6db7bb":"#f6e8bd");}
+            if(d.id=="titan"){var sat=SpacecraftAssembly.Shape(world,"Saturn (artistic sky composition)",PrimitiveType.Sphere,new Vector3(55,35,110),Vector3.one*19,"#d6a26b");var rings=SpacecraftAssembly.Ring(world,"Saturn rings",sat.position,17,"#ddb66c");rings.rotation=Quaternion.Euler(70,15,-18);}
+            if(d.id=="moon")SpacecraftAssembly.Shape(world,"Earth",PrimitiveType.Sphere,new Vector3(45,36,100),Vector3.one*17,"#6db7bb");
+            bool rocket=game.Screen==Stage.Launch||space||(game.Screen==Stage.Build&&game.Category==Category.Rockets);
+            craft=rocket?SpacecraftAssembly.PartModel(world,m.design.rocket):SpacecraftAssembly.Pip(world,m.design,m.destination);
+            if(space){craft.rotation=Quaternion.Euler(90,0,0);craft.position=new Vector3(m.x,4,0);}
+            if(game.Screen==Stage.Build||game.Screen==Stage.Validate||game.Screen==Stage.Title||game.Screen==Stage.Results)SpacecraftAssembly.Shape(world,"Turntable",PrimitiveType.Cylinder,new Vector3(0,-.1f,0),new Vector3(6,.15f,6),"#264849");
+            if(game.Screen==Stage.Land){SpacecraftAssembly.Ring(world,"Landing target",new Vector3(0,.1f,0),3,"#6db7bb").rotation=Quaternion.Euler(90,0,0);chute=SpacecraftAssembly.Cone(craft,"Parachute",Vector3.up*4,2,-1.2f,"#ddb66c");chute.gameObject.SetActive(m.chute);}
+            if(game.Screen==Stage.Explore)for(int i=0;i<5;i++){var marker=SpacecraftAssembly.Ring(world,"Discovery "+(i+1),Sites[i]+Vector3.up*2,1.1f,m.found.Contains(i)?"#6db7bb":"#ddb66c");marker.gameObject.AddComponent<SiteMarker>().index=i;DiscoveryArt.Build(world,d.id,i,Sites[i]);}
+            if(!space&&d.id!="moon")for(int i=0;i<8;i++){var cloud=new GameObject("Cloud").transform;cloud.SetParent(world,false);cloud.localPosition=new Vector3(i*19-65,20+i%3*3,20+i%4*15);for(int k=0;k<4;k++)SpacecraftAssembly.Shape(cloud,"Cloud puff",PrimitiveType.Sphere,new Vector3(k*2,Mathf.Sin(k),0),new Vector3(5,1.2f,2.8f),d.id=="titan"?"#d6a26b":"#bd805b");}
+            if(space)NextRing();
+            if(!game.Save.preferences.reducedMotion&&(game.Screen==Stage.Launch||d.id=="titan"||d.id=="mars"))Effects(space);
+            cameraRig.transform.position=new Vector3(10,8,-13);cameraRig.transform.LookAt(Vector3.up);
+        }
+        void Effects(bool space){if(space)return;var obj=new GameObject("Procedural particles");obj.transform.SetParent(world);obj.transform.position=game.Screen==Stage.Launch?craft.position: new Vector3(0,12,15);var ps=obj.AddComponent<ParticleSystem>();ps.Stop();var main=ps.main;main.startLifetime=3;main.startSpeed=game.Screen==Stage.Launch?6:.5f;main.startSize=game.Screen==Stage.Launch?.25f:.07f;main.maxParticles=250;main.startColor=new Color(.8f,.7f,.4f,.5f);var shape=ps.shape;shape.shapeType=ParticleSystemShapeType.Box;shape.scale=game.Screen==Stage.Launch?Vector3.one:new Vector3(50,1,60);var renderer=obj.GetComponent<ParticleSystemRenderer>();renderer.sharedMaterial=SpacecraftAssembly.Mat("#ddb66c");ps.Play();}
+        public void Burst(Vector3 at){if(game.Save.preferences.reducedMotion)return;var obj=new GameObject("Discovery sparkles");obj.transform.SetParent(world);obj.transform.position=at+Vector3.up;var ps=obj.AddComponent<ParticleSystem>();ps.Stop();var main=ps.main;main.loop=false;main.duration=.6f;main.startLifetime=.8f;main.startSpeed=3;main.startSize=.12f;main.maxParticles=30;main.startColor=new Color(.43f,.72f,.73f);var emission=ps.emission;emission.rateOverTime=0;ps.GetComponent<ParticleSystemRenderer>().sharedMaterial=SpacecraftAssembly.Mat("#6db7bb");ps.Play();ps.Emit(25);Destroy(obj,2);}
+        public void NextRing(){if(ring)Destroy(ring.gameObject);ring=SpacecraftAssembly.Ring(world,"Navigation ring",new Vector3(game.Mission.rings==1?-3:3,game.Mission.rings==2?7:4,26),2.8f,"#ddb66c");}
+        void Update(){if(!game||!craft)return;float dt=Time.deltaTime;bool still=game.Save.preferences.reducedMotion;if(game.Paused)return;if(!still)phase+=dt;
+            var m=game.Mission;var stage=game.Screen;
+            if(stage==Stage.Build||stage==Stage.Title||stage==Stage.Validate||stage==Stage.Results){if(!still)orbit+=dt*6;if(Input.GetMouseButton(0)&&!EventSystem.current.IsPointerOverGameObject())orbit+=Input.GetAxis("Mouse X")*4;float a=orbit*Mathf.Deg2Rad;cameraRig.transform.position=new Vector3(Mathf.Sin(a)*12,6,Mathf.Cos(a)*-12);cameraRig.transform.LookAt(Vector3.up*1.5f);}
+            if(stage==Stage.Launch){craft.position=Vector3.up*game.Progress*22;cameraRig.transform.position=craft.position+new Vector3(9,5,-13);cameraRig.transform.LookAt(craft.position+Vector3.up*2);foreach(var t in craft.GetComponentsInChildren<Transform>()){if(t.name=="Exhaust")t.localScale=new Vector3(1,1+(still?0:Mathf.Sin(phase*30)*.15f),1);if(t.name=="Booster"&&game.Progress>.65f&&(game.Held||Input.GetKey(KeyCode.Space)))t.localPosition+=new Vector3(t.localPosition.x, -2, t.localPosition.z)*dt;}}
+            if(stage==Stage.Travel){cameraRig.transform.position=craft.position+new Vector3(0,4,-12);cameraRig.transform.LookAt(craft.position+Vector3.forward*8);}
+            if(stage==Stage.Land){craft.position=new Vector3(m.x,2+Mathf.Min(18,m.altitude/1000),m.z);chute.gameObject.SetActive(m.chute);if(!still)chute.localRotation=Quaternion.Euler(Mathf.Sin(phase)*5,0,Mathf.Cos(phase)*5);cameraRig.transform.position=craft.position+new Vector3(10,6+Mathf.Min(10,m.altitude/2000),-12);cameraRig.transform.LookAt(craft.position);}
+            if(stage==Stage.Explore){craft.position=new Vector3(m.x,.1f+(m.destination=="titan"&&!still?Mathf.Sin(phase*2)*.08f:0),m.z);cameraRig.transform.position=Vector3.Lerp(cameraRig.transform.position,craft.position+new Vector3(0,8,-12),still?1:dt*5);cameraRig.transform.LookAt(craft.position+Vector3.forward*3);}
+            if(!still)foreach(var t in craft.GetComponentsInChildren<Transform>()){if(t.name=="Eye"){t.localScale=new Vector3(.18f,Mathf.Sin(phase*.8f)>.995f?.03f:.22f,.08f);t.localPosition=new Vector3(Mathf.Sign(t.localPosition.x)*.28f+(Input.mousePosition.x/Screen.width-.5f)*.07f,1.17f,.64f);}if(t.name=="SolarWing")t.localRotation=Quaternion.Euler(0,0,Mathf.Lerp(75,0,Mathf.Clamp01(phase)));if(t.name=="Whip")t.localRotation=Quaternion.Euler(Mathf.Sin(phase*3)*4,0,0);if(t.name=="dish"||t.name=="radar"||t.name=="camera")t.localRotation=Quaternion.Euler(0,game.Explorer.Collecting?phase*240:Mathf.Sin(phase)*15,0);if(t.name=="Sample arm"&&game.Explorer.Collecting)t.localRotation=Quaternion.Euler(0,0,-35-Mathf.Sin(phase*5)*30);if(t.name=="Sensor louvre"&&game.Explorer.Collecting)t.localRotation=Quaternion.Euler(0,phase*160,0);}
+            if(!still)foreach(Transform t in world){if(t.name=="Cloud")t.localPosition+=Vector3.right*dt*.3f;if(t.name=="Lake shimmer")t.localScale=new Vector3(5+Mathf.Sin(phase+t.localPosition.z)*2,.02f,.13f);}
+            if(stage==Stage.Transmit&&!still){for(int i=0;i<3;i++){var t=world.Find("Wave"+i);if(!t)t=SpacecraftAssembly.Ring(world,"Wave"+i,craft.position+Vector3.up*2,1,"#6db7bb");t.localScale=Vector3.one*(1+(phase+i)%3);}}
+        }
+    }
+    public class SiteMarker : MonoBehaviour {public int index;}
+}

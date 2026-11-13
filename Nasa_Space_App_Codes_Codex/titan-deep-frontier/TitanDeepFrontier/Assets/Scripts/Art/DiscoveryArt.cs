@@ -1,0 +1,13 @@
+using UnityEngine;
+namespace Titan {
+    public static class DiscoveryArt {
+        public static void Build(Transform parent,string world,int index,Vector3 at){var root=new GameObject("Science diorama "+index).transform;root.SetParent(parent,false);root.localPosition=at;
+            string color=world=="mars"?"#bd805b":world=="moon"?"#a6b7ad":"#6db7bb";
+            if(index==0){for(int i=0;i<5;i++){var p=new Vector3((i%2)*.7f,0,i*.4f);SpacecraftAssembly.Shape(root,world=="moon"?"Footprint":"Sample pebble",PrimitiveType.Sphere,p,new Vector3(.45f,.15f,.7f),color);}if(world=="titan")SpacecraftAssembly.Ring(root,"Lake ripple",Vector3.up*.08f,2,"#6db7bb").rotation=Quaternion.Euler(90,0,0);}
+            if(index==1){if(world=="mars")SpacecraftAssembly.Cone(root,"Volcano",Vector3.zero,2.5f,2,"#9a684e");else for(int i=0;i<8;i++)SpacecraftAssembly.Cone(root,world=="moon"?"Regolith grain":"Ice crystal",new Vector3(Mathf.Sin(i)*1.3f,0,Mathf.Cos(i)*1.3f),.25f,world=="moon"?.35f:1.6f,color);}
+            if(index==2){if(world=="titan"){for(int i=0;i<5;i++)SpacecraftAssembly.Shape(root,"Methane cloud",PrimitiveType.Sphere,new Vector3((i-2)*.7f,3,0),new Vector3(1.4f,.6f,1),"#d6a26b");for(int i=0;i<5;i++)SpacecraftAssembly.Cone(root,"Rain drop",new Vector3((i-2)*.6f,1+i%2*.5f,0),.13f,.4f,"#6db7bb");}else if(world=="mars"){for(int i=-1;i<=1;i+=2)SpacecraftAssembly.Shape(root,"Canyon wall",PrimitiveType.Cube,new Vector3(i*1.5f,.8f,0),new Vector3(1,1.6f,4),"#bd805b");}else {SpacecraftAssembly.Ring(root,"Shadowed crater",Vector3.up*.1f,2,"#777b73").rotation=Quaternion.Euler(90,0,0);SpacecraftAssembly.Cone(root,"Polar ice",Vector3.zero,.7f,1.4f,"#6db7bb");}}
+            if(index==3){if(world=="moon"){SpacecraftAssembly.Shape(root,"Seismometer",PrimitiveType.Cube,Vector3.up*.4f,new Vector3(1,.8f,1),"#ddb66c");SpacecraftAssembly.PartModel(root,"antenna").localPosition=Vector3.up*.8f;}else for(int i=0;i<6;i++){var tr=SpacecraftAssembly.Shape(root,world=="mars"?"Layered river stone":"Nitrogen molecule",PrimitiveType.Sphere,new Vector3(Mathf.Sin(i)*1.6f,world=="mars"?.2f:i*.4f,Mathf.Cos(i)*1.6f),new Vector3(.8f,world=="mars"?.25f:.8f,.8f),color);if(world=="titan")SpacecraftAssembly.Shape(tr,"Molecule pair",PrimitiveType.Sphere,Vector3.right*.7f,Vector3.one*.75f,"#b1a1da");}}
+            if(index==4){SpacecraftAssembly.Shape(root,world=="moon"?"Earth model":world=="mars"?"Atmosphere exhibit":"Titan model",PrimitiveType.Sphere,Vector3.up*1.6f,Vector3.one*1.6f,world=="moon"?"#6db7bb":color);SpacecraftAssembly.Ring(root,"Orbit model",Vector3.up*1.6f,1.6f,"#ddb66c").rotation=Quaternion.Euler(70,0,0);}
+        }
+    }
+}

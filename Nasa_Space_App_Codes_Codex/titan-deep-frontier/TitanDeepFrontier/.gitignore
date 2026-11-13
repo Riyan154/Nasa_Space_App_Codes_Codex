@@ -1,0 +1,11 @@
+/Library/
+/Temp/
+/Obj/
+/Logs/
+/UserSettings/
+/Builds/
+*.csproj
+!Tools/CoreCheck/CoreCheck.csproj
+*.sln
+**/bin/
+**/obj/
