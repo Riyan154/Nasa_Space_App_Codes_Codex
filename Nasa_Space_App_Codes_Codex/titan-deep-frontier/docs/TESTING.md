@@ -1,5 +1,13 @@
 # Verification record
 
+## Visual workbench · 13 November 2026 · riyans-branch
+
+- 39 automated tests pass, including new resource accounting, solar shortage, battery runtime, mass/budget rejection, all 81 component combinations, save migration and corrupt-loadout checks.
+- Browser checks at 1440×900 and 390×844: visible component swaps, solar launch blocking, battery totals, itemised budget, body/science selection, save/reload/continue, and launch into cruise. No browser console errors in these flows.
+- Fixed stage styling being applied to the app wrapper instead of the adventure element; mobile workbench scrolling now exposes all options and resource cards without horizontal overflow.
+- Original title landscape and palette retained. Inspected the detailed rocket, clouds, component illustrations and launch animation.
+- New checks cover the modified build/launch flow. The pre-existing end-to-end exploration records below are historical checks, not a claim that every lake interaction was manually replayed in this update.
+
 Verified on 11 November 2026 using Node 24 and the Codex browser.
 
 ## Automated checks

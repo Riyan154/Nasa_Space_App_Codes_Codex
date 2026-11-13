@@ -1,6 +1,6 @@
 # TITAN: Deep Frontier
 
-A browser-native, animated 2D adventure for children. Meet Pip, build a three-part robot, launch a rocket, steer through navigation rings, open a parachute and sail around a methane lake. Collect five illustrated NASA-based discoveries and send them home. The original engineering simulation remains available in the optional advanced workshop.
+A browser-native, animated 2D adventure for children. Meet Pip, customise a pictured spacecraft, launch a rocket, steer through navigation rings, open a parachute and sail around a methane lake. Collect five illustrated NASA-based discoveries and send them home. The original engineering simulation remains available in the optional advanced workshop.
 
 **Fictional mission, real scientific inspiration.** This game is not a NASA product and its buoyant lander is not NASA's Dragonfly rotorcraft. Original SVG scenery and spacecraft are game artwork. NASA imagery is labeled separately in the Science Lab.
 
@@ -25,7 +25,7 @@ npm start
 
 The default **Little explorer mode** uses one short instruction at a time:
 
-1. Tap three illustrated parts to assemble Pip.
+1. Customise Pip in the visual workbench. Choose a body under **Mass**, solar wings / a radioisotope generator / batteries under **Power**, and pictured **Science** and **Radio** equipment. **Budget** shows each part's coin cost. Keep all three mission checks green, then select **Ready for launch**. **Use a balanced build** restores a ready-to-fly design.
 2. Hold the launch button or Space until the rocket lifts off.
 3. Use arrows, WASD, touch arrows, or tap the scene to steer through three rings. Missed rings return; there are no lost lives.
 4. Steer left/right toward the landing beam. Open the parachute when its button turns green. The game waits for you.
@@ -34,7 +34,9 @@ The default **Little explorer mode** uses one short instruction at a time:
 
 The lake map offers optional guided sailing: tap a dot. The journal keeps your illustrated discoveries. Pause controls optional sound and gentle animation. Background tabs and open dialogs pause gameplay. Progress saves locally; reloading resumes at the current chapter, with discoveries and flight rings retained. The default game does not require any network requests. NASA gallery requests occur only when opened.
 
-All sprites and scenery are original code-drawn Canvas 2D art: animated eyes and antenna, layered landscapes, lake ripples, boat wakes, methane rain, rocket exhaust, a moving parachute, transmission waves and discovery particles. No generated raster assets or runtime game-engine dependencies are used. Physical movement, altitude, flight duration, navigation rings, marker positions and observations in Little explorer mode are fictional game mechanics, not a mission simulation. NASA reference facts are labeled and linked separately on each card.
+All sprites and scenery are original code-drawn Canvas 2D art: animated eyes and antenna, opening solar wings, visible batteries and generator cooling fins, layered clouds, lake ripples, boat wakes, methane rain, a detailed twin-booster rocket with animated exhaust, a moving parachute, transmission waves and discovery particles. Your chosen parts remain visible during landing and lake exploration. No generated raster assets or runtime game-engine dependencies are used. Physical movement, altitude, flight duration, navigation rings, marker positions and observations in Little explorer mode are fictional game mechanics, not a mission simulation. NASA reference facts are labeled and linked separately on each card.
+
+The little-explorer workbench uses illustrative masses, watts and mission coins, not NASA hardware specifications or real prices. Mass is limited to 240 kg, the coin budget to 300, and supply must meet the selected equipment's power demand. Small solar panels intentionally cannot power this Titan mission. Battery duration is an educational energy/demand estimate; it is not a gameplay countdown. Every science kit can complete the adventure using shared pretend tools. Existing version-2 saves migrate to a default loadout automatically. Before liftoff, **Edit spacecraft** returns to the builder without losing your choices.
 
 ### Advanced workshop
 
