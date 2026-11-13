@@ -1,5 +1,7 @@
 import { DISCOVERIES, FACT_SOURCE, freshAdventure, restoreAdventure, nearbyDiscovery, moveExplorer, collectDiscovery, finishAdventure, clamp } from './adventure-model.js';
-import { landscape, explorer, rocket, space, ellipse, path, box, glyph, star } from './adventure-art.js';
+import { landscape, explorer, rocket, space, ellipse, path, box, glyph, star, cloud } from './adventure-art.js';
+import { COMPONENTS, DEFAULT_LOADOUT, missionTotals } from './builder-model.js';
+import { builderMarkup, renderBuilder } from './builder-view.js';
 import { read, write } from './storage.js';
 
 const KEY='titan.adventure.v2';
@@ -14,7 +16,8 @@ export function adventureMarkup() {
       <div id="game-heading" class="game-heading" hidden><span class="tiny-label" id="chapter-label"></span><h1 id="chapter-title"></h1><p id="instruction" role="status" aria-live="polite"></p></div>
       <div id="world-label" class="world-label"><span>YOUR DESTINATION</span><b>Ligeia Mare</b><small>A methane sea on Saturn’s moon</small></div>
       <div class="pip-tag" id="pip-tag"><b>Hi! I’m Pip.</b><span>Your curious little co-pilot</span></div>
-      <div id="parts-tray" class="parts-tray" hidden>${[['floats','Floaty feet'],['power','Power pack'],['radio','Space radio']].map(([id,label])=>`<button data-game="part" data-part="${id}"><canvas width="70" height="70" data-part-icon="${id}" aria-hidden="true"></canvas><span>${label}</span><b>+</b></button>`).join('')}</div>
+      ${builderMarkup()}
+      <button id="edit-spacecraft" class="edit-spacecraft" data-game="edit-build" hidden>← Edit spacecraft</button>
       <div class="game-toast" id="game-toast" role="status" aria-live="polite"></div>
       <div id="flight-meter" class="flight-meter" hidden><span id="meter-label"></span><div><i id="meter-fill"></i></div></div>
       <div id="mini-map" class="mini-map" hidden><span>LAKE MAP</span><div id="map-track">${DISCOVERIES.map(d=>`<button data-game="navigate" data-id="${d.id}" style="left:${d.x/2800*100}%" aria-label="Guide Pip to ${d.label.toLowerCase()}">●</button>`).join('')}<i id="map-pip"></i></div><small id="map-caption">Tap a dot to guide Pip there</small></div>
@@ -33,7 +36,7 @@ export function mountAdventure(root, callbacks={}) {
   let home=true, w=1200,h=700,scale=1,raf=0,last=0,time=0,elapsed=0,saveTime=0,disposed=false;
   let camera=0,playerX=.28,playerY=.56,ringX=1.1,ringY=.45,altitude=80000,chute=false;
   let progress=0,working=null,launching=false,launchTime=0,transmitting=false,target=null;
-  let particles=[],assembly=[],direction=1,keys=new Set(),held=new Map(),textCache={},audio=null;
+  let particles=[],direction=1,keys=new Set(),held=new Map(),textCache={},audio=null,buildTab='power',deployment=1;
   let soundEnabled=read('titan.adventure.sound',false)===true;
   let reduced=callbacks.reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const on=(node,event,fn)=>node.addEventListener(event,fn,{signal});
@@ -45,16 +48,19 @@ export function mountAdventure(root, callbacks={}) {
   function burst(x,y,color='#f4d17b',amount=22){for(let i=0;i<amount;i++)particles.push({x,y,vx:Math.cos(i*2.4)*(30+i%7*17),vy:Math.sin(i*2.4)*(40+i%5*20)-50,life:1.3,color});}
   function resize(){const rect=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);w=rect.width;h=rect.height;scale=clamp(Math.min(w/1100,h/650),.65,1.2);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);c.setTransform(dpr,0,0,dpr,0,0);}
   const observer=new ResizeObserver(resize);observer.observe(canvas);resize();
-  function resetRuntime(){progress=0;working=null;launching=false;launchTime=0;transmitting=false;playerX=.28;playerY=.53;ringX=1.05;ringY=[.43,.67,.48][state.rings]||.48;altitude=80000;chute=false;target=null;keys.clear();held.clear();}
+  function resetRuntime(){progress=0;working=null;launching=false;launchTime=0;transmitting=false;playerX=.28;playerY=.53;ringX=1.05;ringY=[.43,.67,.48][state.rings]||.48;altitude=80000;chute=false;target=null;keys.clear();held.clear();particles=[];text('#game-toast','');$('#game-toast').classList.remove('visible');}
   function changeStage(stage){state.stage=stage;resetRuntime();persist();sync();ping(760);}
   function start(resume){home=false;if(!resume){state=freshAdventure();}resetRuntime();persist();sync();canvas.focus({preventScroll:true});}
   function sync(){
     const stage=state.stage;
     root.classList.toggle('at-home',home);root.dataset.stage=home?'home':stage;
+    $('.adventure').dataset.stage=home?'home':stage;
     visible('#welcome',home);visible('#game-heading',!home);visible('#pip-tag',home);visible('#world-label',home);
     $('[data-game="continue"]').hidden=!saved;
-    visible('#parts-tray',!home&&stage==='assemble');visible('#game-controls',!home&&stage!=='assemble'&&stage!=='done');
+    visible('#mission-builder',!home&&stage==='assemble');visible('#game-controls',!home&&stage!=='assemble'&&stage!=='done');
+    if(!home&&stage==='assemble')renderBuilder(root,state.loadout,buildTab);
     visible('#mini-map',!home&&stage==='lake');visible('#flight-meter',!home&&['launch','cruise','landing'].includes(stage));
+    visible('#edit-spacecraft',!home&&stage==='launch');
     text('#chapter-title',labels[stage]);text('#chapter-label',`CHAPTER ${stageNumber[stage]+1} OF 5 · PIP’S TITAN ADVENTURE`);
     root.querySelectorAll('[data-chapter]').forEach(node=>{node.classList.toggle('active',!home&&Number(node.dataset.chapter)===stageNumber[stage]);node.classList.toggle('complete',!home&&Number(node.dataset.chapter)<stageNumber[stage]);});
     root.querySelectorAll('[data-part]').forEach(node=>{const done=state.parts.includes(node.dataset.part);node.disabled=done;node.classList.toggle('attached',done);node.querySelector('b').textContent=done?'✓':'+';});
@@ -65,8 +71,8 @@ export function mountAdventure(root, callbacks={}) {
   function updateHUD(){
     if(home)return;
     let instruction='',action='',disabled=false,meter='',amount=0;
-    if(state.stage==='assemble'){const missing=[['floats','floaty feet'],['power','power pack'],['radio','space radio']].find(([id])=>!state.parts.includes(id));instruction=missing?`Tap the ${missing[1]}. Let’s get Pip ready!`:'All ready! Time to launch.';}
-    if(state.stage==='launch'){instruction=launching?'Up, up and away!':'Hold the big button (or Space) to lift off!';action=launching?'Lifting off…':'Hold to launch ↑';disabled=launching;meter=launching?'LIFT OFF!':`ROCKET POWER ${Math.round(progress*100)}%`;amount=progress;}
+    if(state.stage==='assemble')instruction='Swap a part. Watch Pip change. Make all three checks green!';
+    if(state.stage==='launch'){instruction=launching?'Up, up and away!':'Hold the big button (or Space) to lift off!';action=launching?'Lifting off…':'Hold to launch ↑';disabled=launching;meter=launching?'LIFT OFF!':`ROCKET POWER ${Math.round(progress*100)}%`;amount=progress;$('#edit-spacecraft').disabled=launching;}
     if(state.stage==='cruise'){instruction='Steer up and down. Fly through 3 golden rings!';action='↑ Fly up';meter=`NAVIGATION RINGS ${state.rings} / 3`;amount=state.rings/3;}
     if(state.stage==='landing'){instruction=altitude>18000?'Steer toward the glowing landing spot.':!chute?'Open the parachute! Tap the big button.':'Keep Pip above the glowing landing spot.';action=chute?'Parachute open ✓':altitude>18000?'Wait for the green light…':'Open parachute!';disabled=chute||altitude>18000;meter=`${Math.max(0,Math.round(altitude/1000))} km · ${chute?'PARACHUTE OPEN':altitude>18000?'SLOWING DOWN':'SAFE TO OPEN'}`;amount=1-altitude/80000;}
     if(state.stage==='lake'){
@@ -101,9 +107,19 @@ export function mountAdventure(root, callbacks={}) {
     if(a==='pause')pause();
     if(a==='sound'){soundEnabled=!soundEnabled;write('titan.adventure.sound',soundEnabled);ping();pause();}
     if(a==='motion'){reduced=!reduced;write('titan.adventure.motion',reduced);pause();}
-    if(a==='help')showDialog('Let’s play!',`<ol class="simple-help"><li><b>Build:</b> Tap 3 parts to dress Pip.</li><li><b>Launch:</b> Hold the launch button or Space.</li><li><b>Fly:</b> Move up and down through 3 rings.</li><li><b>Land:</b> Open the parachute when the button turns green.</li><li><b>Explore:</b> Sail to glowing markers. Tap to discover!</li></ol><p>Use arrows, WASD, or the touch arrows. Tap the lake to sail there. Tap a map dot for help. There’s no timer or lost lives.</p><button class="play-button" data-game="close">Got it! →</button>`);
-    if(a==='part'&&state.stage==='assemble'&&!home){const id=el.dataset.part;if(!state.parts.includes(id)){state.parts.push(id);assembly.push({id,life:1});ping(440+state.parts.length*150);burst(w*.5,h*.52);persist();sync();if(state.parts.length===3)toast('Pip is ready! Let’s fly!');}}
+    if(a==='help')showDialog('Let’s play!',`<ol class="simple-help"><li><b>Build:</b> Pick pictured parts. Keep mass and coins below the limits, and supply enough power. Then tap Ready for launch.</li><li><b>Launch:</b> Hold the launch button or Space.</li><li><b>Fly:</b> Move up and down through 3 rings.</li><li><b>Land:</b> Open the parachute when the button turns green.</li><li><b>Explore:</b> Sail to glowing markers. Tap to discover!</li></ol><p>All science spots are playable with every kit. Extra tools are pretend shared equipment. Use arrows, WASD, or the touch arrows. Tap the lake to sail there. There’s no timer or lost lives.</p><button class="play-button" data-game="close">Got it! →</button>`);
+    if(a==='power-facts')showDialog('What powers a spacecraft?',`<p><b>Solar panels</b> turn sunlight into electricity. Small panels struggle far from the Sun.</p><p><b>Radioisotope generators</b> turn heat from radioactive decay into electricity, even in darkness.</p><p><b>Batteries</b> store energy and are useful for short missions or alongside a generator.</p><p class="fact-source">Our parts, masses, wattages and coins are illustrative game values. Battery time is an estimate, not a countdown.</p><a href="https://science.nasa.gov/learn/basics-of-space-flight/chapter11-3/" target="_blank" rel="noopener">Learn with NASA ↗</a><button class="play-button" data-game="close">Back to building →</button>`);
+    if(!home&&state.stage==='assemble'){
+      if(a==='build-tab'){buildTab=el.dataset.tab;renderBuilder(root,state.loadout,buildTab);}
+      if(a==='build-part'&&COMPONENTS[el.dataset.group]?.some(item=>item.id===el.dataset.componentId)){
+        state.loadout[el.dataset.group]=el.dataset.componentId;deployment=0;ping(620);const pos=builderPosition();burst(pos.x,pos.y,'#e3cd89',14);persist();renderBuilder(root,state.loadout,buildTab);
+        root.querySelector(`[data-component-id="${el.dataset.componentId}"]`)?.focus({preventScroll:true});
+      }
+      if(a==='build-reset'){state.loadout={...DEFAULT_LOADOUT};persist();renderBuilder(root,state.loadout,buildTab);ping(700);}
+      if(a==='build-ready'&&missionTotals(state.loadout).ready){state.parts=['floats','power','radio'];changeStage('launch');canvas.focus({preventScroll:true});}
+    }
     if(a==='action')action();
+    if(a==='edit-build'&&!home&&state.stage==='launch'&&!launching){changeStage('assemble');canvas.focus({preventScroll:true});}
     if(a==='navigate'&&state.stage==='lake'&&!working&&!transmitting){const d=DISCOVERIES.find(d=>d.id===el.dataset.id);target={x:d.x,y:d.y};toast(`Pip is sailing to: ${d.label.toLowerCase()}`);}
     if(a==='read-fact'){const d=DISCOVERIES.find(d=>d.id===el.dataset.id);if(state.found.includes(d.id))factCard(d);}
     if(a==='freeplay'){closeDialog();state.stage='lake';transmitting=false;progress=0;persist();sync();}
@@ -115,7 +131,7 @@ export function mountAdventure(root, callbacks={}) {
   }
   on(root,'pointerdown',pointerDown);on(root,'pointerup',e=>held.delete(e.pointerId));on(root,'pointercancel',e=>held.delete(e.pointerId));on(root,'lostpointercapture',e=>held.delete(e.pointerId));
   on(canvas,'pointerdown',e=>{if(home||popup.open)return;const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;if(state.stage==='lake'&&!working){target={x:clamp(camera+x/scale,80,2700),y:clamp(y/h,.6,.9)};}if(state.stage==='cruise'||state.stage==='landing'){playerY=clamp(y/h,.28,.82);playerX=clamp(x/w,.12,.88);}canvas.focus({preventScroll:true});});
-  on(window,'keydown',e=>{if(home||document.querySelector('dialog[open]'))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D',' '].includes(e.key)){
+  on(window,'keydown',e=>{if(home||document.querySelector('dialog[open]'))return;if(state.stage==='assemble'){if(e.key==='Escape')pause();return;}if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D',' '].includes(e.key)){
     // Preserve native Space/Enter activation on menu and dialog buttons.
     if(e.key===' '&&e.target instanceof HTMLButtonElement&&e.target.id!=='game-action')return;
     e.preventDefault();keys.add(e.key.toLowerCase());target=null;if(e.key===' '&&!e.repeat)action();
@@ -123,9 +139,9 @@ export function mountAdventure(root, callbacks={}) {
   on(window,'keyup',e=>keys.delete(e.key.toLowerCase()));on(window,'blur',()=>{keys.clear();held.clear();});on(document,'visibilitychange',()=>{keys.clear();held.clear();last=0;if(!home)persist();});
   function input(){const dirs=new Set(held.values());return {dx:Number(keys.has('arrowright')||keys.has('d')||dirs.has('right'))-Number(keys.has('arrowleft')||keys.has('a')||dirs.has('left')),dy:Number(keys.has('arrowdown')||keys.has('s')||dirs.has('down'))-Number(keys.has('arrowup')||keys.has('w')||dirs.has('up')),launch:keys.has(' ')||dirs.has('launch')};}
   function update(dt){
+    deployment=Math.min(1,deployment+dt*2.4);
     const {dx,dy,launch}=input();saveTime+=dt;elapsed+=dt;if(elapsed>4)$('#game-toast').classList.remove('visible');
     if(home)return;
-    if(state.stage==='assemble'&&state.parts.length===3){launchTime+=dt;if(launchTime>1.2)changeStage('launch');}
     if(state.stage==='launch'){
       if(!launching){progress=clamp(progress+(launch?dt*.45:-dt*.22),0,1);if(progress>=1){launching=true;launchTime=0;ping(200);burst(w*.5,h*.78,'#e6c998',35);}}
       else{launchTime+=dt;if(launchTime>4.3)changeStage('cruise');}
@@ -150,6 +166,7 @@ export function mountAdventure(root, callbacks={}) {
     if(saveTime>1.5){saveTime=0;persist();}
     updateHUD();
   }
+  function builderPosition(){return {x:w<=900?w*.5:w*.5+25,y:w<=900?278:h*.57,s:w<=900?1.18:Math.min(1.75,Math.max(.85,(w-590)/390))};}
   function draw(dt){
     const t=reduced?0:time;const stage=home?'home':state.stage;
     if(['home','lake','landing','done'].includes(stage)){
@@ -163,7 +180,7 @@ export function mountAdventure(root, callbacks={}) {
       if(stage==='landing'){
         const zone=w*.62;c.fillStyle='#c0e6ac25';c.fillRect(zone-w*.13,h*.49,w*.26,h*.3);ellipse(c,zone,h*.76,w*.13,14,'#9ed7b233','#d2e8ab');c.fillStyle='#eff1ce';c.textAlign='center';c.font='bold 12px sans-serif';c.fillText('LAND HERE ↓',zone,h*.82);
         if(!chute){c.save();c.globalAlpha=.3;ellipse(c,playerX*w,playerY*h+15,65*scale,45*scale,'#f7aa4c');c.restore();}
-        explorer(c,playerX*w,playerY*h,scale*.8,t,{chute});
+        explorer(c,playerX*w,playerY*h,scale*.8,t,{chute,loadout:state.loadout});
       }
       if(stage==='lake'||stage==='done'){
         for(const d of DISCOVERIES){const x=(d.x-camera)*scale,y=d.y*h;if(x< -120||x>w+120)continue;const done=state.found.includes(d.id);ellipse(c,x,y+10,49*scale,11*scale,null,done?'#c7dfb13b':'#ebd28c88');
@@ -173,7 +190,7 @@ export function mountAdventure(root, callbacks={}) {
         const px=(state.x-camera)*scale,py=state.y*h;const moving=!!(input().dx||input().dy||target);
         if(target){ellipse(c,(target.x-camera)*scale,target.y*h,18+Math.sin(t*5)*4,7,null,'#fff1bc');}
         if(moving&&!reduced){for(let i=0;i<5;i++)ellipse(c,px-direction*(70+i*12)*scale,py+24*scale,(10+i*4)*scale,2+i,'#c4d7a90c','#d2ddac33');}
-        explorer(c,px,py+Math.sin(t*2)*3,scale,t,{moving,sampling:working?progress*3:0});
+        explorer(c,px,py+Math.sin(t*2)*3,scale,t,{moving,sampling:working?progress*3:0,loadout:state.loadout});
         if(working==='air'){path(c,[[px,py-70*scale],[px+30*scale,py-110*scale-progress*80]],null,'#e9e5bd');ellipse(c,px+30*scale,py-130*scale-progress*80,23*scale,28*scale,'#e4a574','#f0d294');}
         if(working==='cold'){glyph(c,'thermometer',px+100*scale,py-45*scale,30,'#b3dbdd');}
         if(working==='shore'&&progress>.8){c.fillStyle=`rgba(255,240,196,${Math.max(0,Math.sin(progress*60))*.3})`;c.fillRect(0,0,w,h);}
@@ -183,18 +200,19 @@ export function mountAdventure(root, callbacks={}) {
     }else if(stage==='assemble'){
       const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,'#223e44');g.addColorStop(1,'#51756b');c.fillStyle=g;c.fillRect(0,0,w,h);
       for(let i=0;i<30;i++)path(c,[[i*60,0],[i*60,h]],null,'#c1d8b60b');for(let i=0;i<20;i++)path(c,[[0,i*60],[w,i*60]],null,'#c1d8b60b');
-      box(c,w*.5-180*scale,h*.42-110*scale,360*scale,270*scale,140,'#c5dfc30c','#e5dca42e');ellipse(c,w*.5,h*.65,160*scale,32*scale,'#213b3b');ellipse(c,w*.5,h*.64,160*scale,24*scale,'#6d8b76','#b1b58c');
-      explorer(c,w*.5,h*.57+Math.sin(t)*4,scale*1.5,t,{parts:state.parts});
-      for(let i=0;i<3;i++){const a=t*.3+i*2.1;star(c,w*.5+Math.cos(a)*200*scale,h*.47+Math.sin(a)*90*scale,5,'#e7dcaa66');}
-      for(const a of assembly){glyph(c,a.id,w*.5+(1-a.life)*130*scale,h*.42-(1-a.life)*120*scale,45*a.life,'#f3d294');a.life-=dt*1.2;}assembly=assembly.filter(a=>a.life>0);
+      const pos=builderPosition();
+      ellipse(c,pos.x,pos.y-45,150*pos.s,115*pos.s,'#c5dfc307','#e5dca42e');ellipse(c,pos.x,pos.y+45*pos.s,126*pos.s,24*pos.s,'#213b3b');ellipse(c,pos.x,pos.y+40*pos.s,126*pos.s,18*pos.s,'#6d8b76','#b1b58c');
+      explorer(c,pos.x,pos.y+Math.sin(t)*3,pos.s,t,{loadout:state.loadout,deploy:reduced?1:1-(1-deployment)**3});
+      for(let i=0;i<3;i++){const a=t*.3+i*2.1;star(c,pos.x+Math.cos(a)*150*pos.s,pos.y-35+Math.sin(a)*80*pos.s,4,'#e7dcaa66');}
     }else if(stage==='launch'){
       const offset=launching?Math.min(1,launchTime/3):0;
       const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,offset>.6?'#192d40':'#628e98');g.addColorStop(1,'#e1c69b');c.fillStyle=g;c.fillRect(0,0,w,h);
-      for(let i=0;i<7;i++){const x=i*w/5-40,y=h*.32+i%3*60+offset*h*.9;ellipse(c,x,y,90,16,'#f4e9cb44');}
+      for(let i=0;i<7;i++){const x=((i*w/4+t*(3+i%3))%(w+300))-150,y=h*.27+i%3*70+offset*h*.9;cloud(c,x,y,.65+i%3*.25,.38+i%2*.18);}
       const ground=h*.82+offset*h;path(c,[[0,ground],[w*.2,ground-30],[w*.48,ground-10],[w*.7,ground-35],[w,ground],[w,h+offset*h],[0,h+offset*h]],'#5c7961');box(c,w*.5-95,ground,190,20,3,'#3b5351');
-      if(!launching){path(c,[[w*.5+70,ground],[w*.5+70,ground-200],[w*.5+25,ground-200]],null,'#56675b');}
-      const ry=h*.57-offset*h*.75;
-      rocket(c,w*.5+(reduced?0:Math.sin(time*40)*progress),ry,scale*1.25,t,launching?1:progress*.5);
+      if(!launching){const tx=w*.5+100,top=ground-260*scale;c.lineWidth=3;path(c,[[tx,ground],[tx,top],[tx+30,top],[tx+30,ground]],null,'#536b61');for(let i=0;i<6;i++){const yy=top+i*43*scale;path(c,[[tx,yy],[tx+30,yy+43*scale],[tx,yy+43*scale],[tx+30,yy]],null,'#7a8b72');}path(c,[[tx,top+50],[w*.5+27,top+50]],null,'#aab299');box(c,w*.5-100,ground-6,200,8,2,'#a9b195');}
+      const ry=h*.82-84*scale*1.35-8-offset*h*.75;
+      rocket(c,w*.5+(reduced?0:Math.sin(time*40)*progress),ry,scale*1.35,t,launching?1:progress*.5);
+      if(!launching){cloud(c,w*.5-50-Math.sin(t)*20,ground-16,.4,.2);cloud(c,w*.5+40+Math.sin(t)*30,ground-12,.5,.18);}
       if(launching){for(let i=0;i<12;i++)ellipse(c,w*.5+Math.sin(i*7)*launchTime*60,ground+i%3*5,10+launchTime*14,10+launchTime*10,'#eee4c74d');}
     }else if(stage==='cruise'){
       space(c,w,h,t,reduced?0:time*20);const rx=ringX*w,ry=ringY*h;
@@ -205,7 +223,6 @@ export function mountAdventure(root, callbacks={}) {
     if(!reduced){for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=100*dt;p.life-=dt;c.globalAlpha=Math.max(0,p.life);star(c,p.x,p.y,4,p.color);}c.globalAlpha=1;particles=particles.filter(p=>p.life>0);}else particles=[];
   }
   function frame(now){if(disposed)return;const dt=last?clamp((now-last)/1000,0,.05):0;last=now;const paused=document.hidden||!!document.querySelector('dialog[open]');if(!paused){time+=dt;update(dt);}draw(paused?0:dt);raf=requestAnimationFrame(frame);}
-  root.querySelectorAll('[data-part-icon]').forEach(el=>glyph(el.getContext('2d'),el.dataset.partIcon,35,35,34,'#e7d4a0'));
   reduced=read('titan.adventure.motion',reduced)===true;sync();raf=requestAnimationFrame(frame);
   return ()=>{disposed=true;cancelAnimationFrame(raf);observer.disconnect();abort.abort();audio?.close();if(!home)persist();if(popup.open)popup.close();};
 }

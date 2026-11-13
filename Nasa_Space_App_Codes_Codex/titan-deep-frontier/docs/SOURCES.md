@@ -1,5 +1,9 @@
 # Science and NASA integration
 
+## Visual workbench update · 13 November 2026
+
+The little-explorer power cards distinguish solar electricity, electricity made from radioactive-decay heat, and stored battery energy. Sources: [NASA Onboard Systems](https://science.nasa.gov/learn/basics-of-space-flight/chapter11-3/) and [NASA Radioisotope Power Systems overview](https://science.nasa.gov/planetary-science/programs/radioisotope-power-systems/overview/). NASA describes batteries as an option for short-lived probes, and radioisotope systems as useful where solar power is unsuitable. The pictured parts are original illustrations; their masses, wattages, stored energy, capacity limits and coin costs are fictional balancing values, explicitly labelled in the builder. The 600 Wh battery estimate uses energy divided by load in watts; the arcade adventure does not simulate depletion. These choices do not modify the separate advanced engineering simulation.
+
 Verified on 11 November 2026. This is an educational strategy game. Resource production, costs, weather frequency, travel time, construction, population and mission progression are authored game rules, not NASA predictions. The rendered landscape and structures are procedural game art, not spacecraft imagery. NASA API content appears only in the science archive and does not silently alter a save.
 
 ## Titan reference values
