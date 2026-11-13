@@ -44,3 +44,9 @@ Run `node --test tests/nasa.test.js` for mocked success, cache, outage, deadline
 ## Deliberately optional NASA services
 
 [NASA Open APIs](https://api.nasa.gov/) documents APOD, NeoWs and DONKI. They are not integrated: astronomy-of-the-day, near-Earth asteroid data and near-Earth space weather are not live Titan surface measurements. The portal currently announces APOD migration to `https://science.nasa.gov/wp-json/wp/v2/apod-basic` and legacy API retirement on 1 December 2026. Adding these services would need a distinct, accurately labeled purpose and service-specific authentication/rate-limit handling. This game does not send requests to those services or expose a key field.
+# Little explorer redesign — verified 2026-11-12
+
+Five collectible cards use NASA's [Titan Facts](https://science.nasa.gov/saturn/moons/titan/facts/): liquid methane/ethane lakes; roughly −179°C surface temperature and rock-like water ice; methane clouds/rain/rivers; mostly nitrogen air with approximately 60% greater surface pressure than Earth; and Titan being Saturn's largest moon, larger than Mercury. The pressure card follows the 60% wording on this page (about 1.6×). The optional legacy lab's approximately 1.5× is a rounded educational value.
+
+Amber haze, muted icy shores and dark lake colors are an artistic interpretation, not calibrated imagery. Saturn appears in the space-flight scene only. The landscape, Pip, markers, ring course and launch/landing motion are original fictional game art. Interactive samples unlock reference facts; they do not claim to be real sensor readings. Flight travel and signal time are compressed for play. The parachute's 18 km prompt is a forgiving game threshold, not operational guidance.
+

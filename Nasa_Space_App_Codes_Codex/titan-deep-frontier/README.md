@@ -1,6 +1,6 @@
 # TITAN: Deep Frontier
 
-A browser-native spacecraft design and Titan lake exploration game. Build a robotic lander, balance mass, mission credits and power, navigate to Saturn, survive atmospheric entry, float on a hydrocarbon sea, and send scientific observations home.
+A browser-native, animated 2D adventure for children. Meet Pip, build a three-part robot, launch a rocket, steer through navigation rings, open a parachute and sail around a methane lake. Collect five illustrated NASA-based discoveries and send them home. The original engineering simulation remains available in the optional advanced workshop.
 
 **Fictional mission, real scientific inspiration.** This game is not a NASA product and its buoyant lander is not NASA's Dragonfly rotorcraft. Original SVG scenery and spacecraft are game artwork. NASA imagery is labeled separately in the Science Lab.
 
@@ -22,6 +22,23 @@ npm start
 ```
 
 ## Play
+
+The default **Little explorer mode** uses one short instruction at a time:
+
+1. Tap three illustrated parts to assemble Pip.
+2. Hold the launch button or Space until the rocket lifts off.
+3. Use arrows, WASD, touch arrows, or tap the scene to steer through three rings. Missed rings return; there are no lost lives.
+4. Steer left/right toward the landing beam. Open the parachute when its button turns green. The game waits for you.
+5. Sail to glowing science markers, then tap the big action button. Pip animates a sample scoop, thermometer, weather balloon or camera. Read or close the discovery card.
+6. Find all five discoveries, then send them to Earth to earn three explorer badges. Keep sailing or start again.
+
+The lake map offers optional guided sailing: tap a dot. The journal keeps your illustrated discoveries. Pause controls optional sound and gentle animation. Background tabs and open dialogs pause gameplay. Progress saves locally; reloading resumes at the current chapter, with discoveries and flight rings retained. The default game does not require any network requests. NASA gallery requests occur only when opened.
+
+All sprites and scenery are original code-drawn Canvas 2D art: animated eyes and antenna, layered landscapes, lake ripples, boat wakes, methane rain, rocket exhaust, a moving parachute, transmission waves and discovery particles. No generated raster assets or runtime game-engine dependencies are used. Physical movement, altitude, flight duration, navigation rings, marker positions and observations in Little explorer mode are fictional game mechanics, not a mission simulation. NASA reference facts are labeled and linked separately on each card.
+
+### Advanced workshop
+
+Open **Advanced spacecraft workshop** on the title screen for the original engineering experience:
 
 1. Choose **Start your mission**, a difficulty, and a lake.
 2. Build through seven categories: rocket, power, science, radio, guidance, protection, landing. The starter spacecraft is a useful example, not a prescribed solution. Architect difficulty deliberately requires a cheaper redesign.

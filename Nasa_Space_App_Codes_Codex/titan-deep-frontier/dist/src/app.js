@@ -3,11 +3,13 @@ import { newMission, resources, choosePart, validate, beginFlight, advanceFlight
 import { icon, scene, lander, rocketArt } from './art.js';
 import { read, write, loadMission, saveMission, archiveMission } from './storage.js';
 import { loadImages, loadDatasets } from './nasa.js';
+import { adventureMarkup, mountAdventure } from './adventure.js';
 
 const app = document.querySelector('#app');
 const dialog = document.querySelector('#overlay');
 let mission = loadMission();
-let screen = 'home';
+let screen = 'arcade';
+let disposeAdventure = null;
 let briefing = { difficulty: 'cadet', lake: 'ligeia' };
 let settings = { sound: false, reducedMotion: false, ...read('titan.settings.v1', {}) };
 let countdownTimer;
@@ -28,7 +30,7 @@ function notify(message) {
   clearTimeout(notify.timer); notify.timer = setTimeout(() => toast.classList.remove('show'), 5500);
 }
 function persist() { if (mission && !saveMission(mission)) notify('Your browser cannot save right now. Keep this tab open to continue your mission.'); }
-function go(next) { screen = next; render(); window.scrollTo({ top: 0, behavior: 'instant' }); const heading = app.querySelector('h1'); heading?.focus({ preventScroll: true }); }
+function go(next) { screen = next === 'home' ? 'arcade' : next; render(); window.scrollTo({ top: 0, behavior: 'instant' }); const heading = app.querySelector('h1'); heading?.focus({ preventScroll: true }); }
 function header() {
   return `<header class="topbar"><button class="brand" data-action="home" aria-label="Titan home"><span class="brand-mark">T<span>✦</span></span><span>TITAN<span class="brand-sub">DEEP FRONTIER</span></span></button><nav aria-label="Game menu">${button('science', `${icon('book', 17)} <span>Science lab</span>`, 'nav-button', 'aria-label="Science lab"')}${button('archive', `${icon('archive', 17)} <span>Mission archive</span>`, 'nav-button', 'aria-label="Mission archive"')}<span class="nav-divider"></span>${button('settings', icon('settings', 20), 'icon-button', 'aria-label="Settings"')}</nav></header>`;
 }
@@ -81,7 +83,13 @@ function resultsScreen() {
   return `<main class="results layout-page"><div class="section-kicker">MISSION TLE–01 <span>/ THE EXPEDITION REPORT</span></div><div class="results-grid"><section><div class="eyebrow mint">${result.success ? '✦ MISSION ACCOMPLISHED' : '✦ EVERY JOURNEY TEACHES US SOMETHING'}</div><h1 tabindex="-1">${result.success ? 'You made<br><em>an entire world closer.</em>' : 'The next adventure<br><em>starts with what you learned.</em>'}</h1><p class="lead">${escape(result.reason)}</p><div class="result-score"><strong>${result.score}<small>/100</small></strong><div>${escape(result.rank)}<span>${f.transmitted} data units returned to Earth</span></div></div><details class="score-details"><summary>See how your mission scored</summary>${Object.entries(result.breakdown).map(([key,value])=>`<div><span>${key}</span><strong>${value}</strong></div>`).join('')}</details><div class="home-actions">${button('retry',`Refine my spacecraft ${arrow}`)}${button('new','New adventure','secondary')}</div>${button('science','Unlock the real Titan: NASA gallery ↗','text-button')}</section><div class="result-art">${scene('results')}<div>${lander(mission.design,'results')}</div><span>${f.landed ? 'A LITTLE EXPLORER. A REMARKABLE JOURNEY.' : 'KEEP ASKING. KEEP EXPLORING.'}</span></div></div></main>`;
 }
 function render() {
+  disposeAdventure?.(); disposeAdventure = null;
   document.documentElement.classList.toggle('reduce-motion',settings.reducedMotion);
+  if(screen === 'arcade') {
+    app.innerHTML = adventureMarkup();
+    disposeAdventure = mountAdventure(app, {science:showScience, workshop:()=>go('briefing'), reducedMotion:settings.reducedMotion});
+    return;
+  }
   const views = { home, briefing:briefingScreen, build:buildScreen, check:checkScreen, launch:flightScreen, flight:flightScreen, explore:exploreScreen, results:resultsScreen };
   app.innerHTML = `${header()}${(views[screen] || home)()}${footer()}`;
 }

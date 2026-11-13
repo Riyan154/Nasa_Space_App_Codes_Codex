@@ -63,3 +63,14 @@ Start `npm start`, open http://127.0.0.1:4173 and use the default Pathfinder/Lig
 ## Verification boundaries
 
 The mathematics is tested as an educational model, not validated against a flight trajectory. No claim of testing every browser, assistive technology or all combinatorial hardware configurations. NASA response mocks cover outage behavior without depending on live requests. Sound generation is implemented with Web Audio but audible output was not instrumentally measured. Static PDS fallback is intentional because the remote endpoint lacks browser CORS; the local relay is the live-discovery path.
+# Little explorer redesign verification — 2026-11-12
+
+- `npm test`: 34 passing tests, including four new adventure tests covering save validation, normalized/bounded movement, marker proximity, duplicate discovery prevention, all five discoveries and one-time transmission.
+- `npm run build`: successful; the static output includes the new canvas artwork, adventure controller/model and stylesheet.
+- Browser play verified assembly, held-button launch, three navigation rings with directional steering, parachute deployment, safe landing, guided lake sailing, sampling animations and illustrated discoveries. The completed saved expedition displayed all five discoveries and the three-badge reward screen.
+- Phone layout checked at 390 × 844. Discovery dialogs, touch controls, lake map and sampling were usable. The temporary phone viewport was reset after testing.
+- Reloaded mid-expedition: two discoveries and lake progress survived. Reloaded the completed expedition: its reward and five-card journal survived.
+- Keyboard movement verified by the live map position changing from 93.7413% to 88.6435% while holding Left. The journal opened from the action button. No browser warnings or errors were recorded in the final check.
+- Fixed assembly guidance when parts are selected out of order; added a green parachute readiness state; fixed closing the final reward so it returns to free sailing; prevented completed explorers being prompted to transmit again.
+- Artwork is original Canvas 2D illustration. The simplified adventure's flight and observation mechanics are intentionally fictional; factual discovery cards link to NASA references.
+
