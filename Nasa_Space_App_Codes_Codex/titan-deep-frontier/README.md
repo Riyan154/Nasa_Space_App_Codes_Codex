@@ -1,6 +1,6 @@
 # TITAN: Deep Frontier
 
-A browser-native, animated 2D adventure for children. Meet Pip, customise a pictured spacecraft, launch a rocket, steer through navigation rings, open a parachute and sail around a methane lake. Collect five illustrated NASA-based discoveries and send them home. The original engineering simulation remains available in the optional advanced workshop.
+The default browser game is a procedural 3D expedition to Titan, Mars or the Moon. Assemble Pip’s spacecraft, steer through three rings, prepare the landing equipment and drive to five discoveries. Use Space to launch and fly, arrows or WASD to steer, and E to collect. Touch controls and beacon guidance are available. The game saves on this browser. The Classic 2D game and its NASA gallery are available from the title screen or at `/?classic`.
 
 **Fictional mission, real scientific inspiration.** This game is not a NASA product and its buoyant lander is not NASA's Dragonfly rotorcraft. Original SVG scenery and spacecraft are game artwork. NASA imagery is labeled separately in the Science Lab.
 
